@@ -1,44 +1,44 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect, useLayoutEffect } from 'react';
 import './index.css'
 export function FlexInput(props) {
 
   const inputContainerRef = useRef(null);
   const inputRef = useRef(null);
   const hiddenRef = useRef(null);
-  const [height, setHeight] = useState(24); // 初始高度
+  const [height, setHeight] = useState(28); // 初始高度
   const [value, setValue] = useState(''); // textarea的内容
   const [wrap, setWrap] = useState('off'); // 隐藏textarea是否换行
 
   const placeholder = props.placeholder || '请输入';
   const disabled = props.disabled || false;
-  const onChange = props.onChange || function(){}
-  const handleKeyUp = (event) => {
-    const containerWidth = inputContainerRef.current.clientWidth;
-    setValue(event.target.value);
-    const content = hiddenRef.current;
-    const contentWidth = document.getElementById('hidden').scrollWidth; // 内容宽度
-    const contentHeight = document.getElementById('hidden').scrollHeight; // 内容高度
-    inputRef.current.style.height = `${contentHeight}px`
-    inputContainerRef.current.style.height = `${contentHeight + 20}px`
-    setHeight(contentHeight)
+  const onChange = props.onChange || function(){};
 
-    if(contentWidth > 150 && contentWidth < containerWidth-30) {
-      inputRef.current.style.width = `${contentWidth+20}px`;
+  useLayoutEffect(() => {
+    const containerWidth = inputContainerRef.current.offsetWidth;
+    const content = hiddenRef.current;
+    inputRef.current.style.height = `${content.scrollHeight}px`;
+    inputContainerRef.current.style.height = `${content.scrollHeight}px`;
+    // 内容在区间范围内变宽，输入框跟着变化
+    if(content.scrollWidth > 180 && content.scrollWidth <= containerWidth-32) {
+      inputRef.current.style.width = `${content.scrollWidth}px`;
     }
-    if(contentWidth > containerWidth) {
-      inputRef.current.style.width = `${containerWidth-30}px`
-      inputRef.current.style.height = `${height+24}px`;
-      inputContainerRef.current.style.height = `${height +50}px`;
-      setHeight(height+24);
-      content.style.width = `${containerWidth-30}px`
+    if(content.scrollWidth > containerWidth - 40) {
+      // 超出一行后，固定隐藏区的宽度，使之能换行
+      content.style.width = `${containerWidth - 30}px`;
       setWrap('soft');
+      inputRef.current.style.height = `${content.scrollHeight}px`;
+      inputContainerRef.current.style.height = `${content.scrollHeight}px`;
+      setHeight(content.scrollHeight);
     }
-    // 如果用户点击enter键，换行
-    if(event?.keyCode === 13) {
-      // 切换父级元素高度
-      inputRef.current.style.height = `${height+24}px`;
-      setHeight(height + 24);  
-      inputContainerRef.current.style.height = `${height+50}px`;
+  }, [value])
+
+  const handleKeyUp = (event) => {
+    setValue(event.target.value);
+    if(event.keyCode === 13) {
+      // 点击了enter键
+      inputRef.current.style.height = `${height + 24}px`;
+      inputContainerRef.current.style.height = `${height + 24}px`;
+      setHeight(height + 24);
     }
   }
   return (
@@ -57,6 +57,7 @@ export function FlexInput(props) {
         onKeyUp={handleKeyUp}
         className='input-area'
         onChange={onChange}
+        wrap={wrap}
         >
       </textarea>
     </div>
